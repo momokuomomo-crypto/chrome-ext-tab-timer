@@ -58,6 +58,17 @@ tests/
   integration/                 # background/index.tsの統合テスト（sinon-chrome）
 ```
 
+## 収益化方法
+
+無料3件まで。Pro版で定型タイマーを提供する。
+
+## 将来の拡張案
+
+- 閲覧時間の上限
+- 集中モード
+
+出典：[稟議書_Chrome拡張機能アイデア.md（項目9）](https://github.com/momokuomomo-crypto/ai-council-output/blob/master/chrome-extension-ideas/稟議書_Chrome拡張機能アイデア.md)
+
 ## 開発の経緯
 
 [ai-build-council](https://github.com/momokuomomo-crypto/ai-build-council)
