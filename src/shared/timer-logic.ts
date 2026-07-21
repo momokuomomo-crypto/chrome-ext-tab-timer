@@ -2,6 +2,12 @@ import type { TimerRecord } from "./timer-types";
 
 export const MIN_LEAD_MS = 60_000;
 export const RECENTLY_CANCELLED_TTL_MS = 5 * 60_000;
+// 通知後、ユーザーが一切操作しなかった（タブを閉じる／URLを変える／
+// 通知をクリックまたは明示的に閉じる、のいずれも起きなかった）場合、
+// notifiedレコードが無期限にstorageへ残り続けてしまう（実Chromeスモーク
+// テスト監査で発見：通知が実際にOSの通知センターへ残る/残らないに関わらず、
+// 拡張機能側のレコードは掃除されない）。24時間経てば不要とみなす。
+export const STALE_NOTIFIED_TTL_MS = 24 * 60 * 60_000;
 
 export function originAndPathOf(url: string): string | null {
   try {
@@ -47,4 +53,8 @@ export function isRecentlyCancelledValid(cancelledAt: number, now: number): bool
 export function shouldFire(record: TimerRecord, now: number): boolean {
   if (record.status === "firing") return true;
   return record.status === "scheduled" && record.fireAt <= now;
+}
+
+export function isStaleNotified(record: TimerRecord, now: number): boolean {
+  return record.status === "notified" && now - record.fireAt >= STALE_NOTIFIED_TTL_MS;
 }

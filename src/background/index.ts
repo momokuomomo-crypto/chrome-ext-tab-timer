@@ -91,6 +91,20 @@ chrome.runtime.onInstalled.addListener(() => {
   void ensureReconciled();
 });
 
+// ensureReconciled()が失敗した場合、.catch()を付けずvoidで投げっぱなしに
+// すると未処理rejectionになり、以降のensureReconciled()呼び出しは
+// reconciledPromiseがリセットされているため再試行はされるものの、この
+// 1回分のイベント処理（タブ削除・URL変更・alarm発火・通知クリック等）が
+// 無言で失われる（実Chromeスモークテスト監査で発見）。全リスナー共通で
+// ログを残すヘルパーに統一する。
+function runAfterReconcile(label: string, task: () => Promise<void>): void {
+  void ensureReconciled()
+    .then(() => enqueueTask(task))
+    .catch((error: unknown) => {
+      console.error(`${label} failed`, error);
+    });
+}
+
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   const minutesMatch = /^tab-timer-set:(\d+)$/.exec(String(info.menuItemId));
   if (!minutesMatch || tab?.id === undefined || tab.url === undefined) return;
@@ -99,35 +113,35 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   const tabId = tab.id;
   const title = tab.title ?? tab.url;
   const url = tab.url;
-  void ensureReconciled().then(() =>
-    enqueueTask(() => createTimer(tabId, title, url, now + minutes * 60_000, now)),
+  runAfterReconcile("contextMenus.onClicked", () =>
+    createTimer(tabId, title, url, now + minutes * 60_000, now).then(() => undefined),
   );
 });
 
 chrome.tabs.onRemoved.addListener((tabId) => {
-  void ensureReconciled().then(() => enqueueTask(() => handleTabRemoved(tabId, Date.now())));
+  runAfterReconcile("tabs.onRemoved", () => handleTabRemoved(tabId, Date.now()));
 });
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
   if (changeInfo.url === undefined) return;
   const newUrl = changeInfo.url;
-  void ensureReconciled().then(() => enqueueTask(() => handleTabUpdated(tabId, newUrl, Date.now())));
+  runAfterReconcile("tabs.onUpdated", () => handleTabUpdated(tabId, newUrl, Date.now()));
 });
 
 chrome.tabs.onReplaced.addListener((addedTabId, removedTabId) => {
-  void ensureReconciled().then(() => enqueueTask(() => handleTabReplaced(removedTabId, addedTabId)));
+  runAfterReconcile("tabs.onReplaced", () => handleTabReplaced(removedTabId, addedTabId));
 });
 
 chrome.alarms.onAlarm.addListener((alarm) => {
-  void ensureReconciled().then(() => enqueueTask(() => handleAlarm(alarm.name, Date.now())));
+  runAfterReconcile("alarms.onAlarm", () => handleAlarm(alarm.name, Date.now()));
 });
 
 chrome.notifications.onClicked.addListener((notificationId) => {
-  void ensureReconciled().then(() => enqueueTask(() => handleNotificationClicked(notificationId)));
+  runAfterReconcile("notifications.onClicked", () => handleNotificationClicked(notificationId));
 });
 
 chrome.notifications.onClosed.addListener((notificationId) => {
-  void ensureReconciled().then(() => enqueueTask(() => handleNotificationClosed(notificationId)));
+  runAfterReconcile("notifications.onClosed", () => handleNotificationClosed(notificationId));
 });
 
 const EMPTY_STATE_RESPONSE: GetStateResponse = {

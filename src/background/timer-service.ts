@@ -2,6 +2,7 @@ import {
   alarmNameFor,
   idFromAlarmName,
   isRecentlyCancelledValid,
+  isStaleNotified,
   notificationIdFor,
   originAndPathOf,
   shouldFire,
@@ -274,6 +275,14 @@ export async function reconcileNormal(now: number): Promise<void> {
         continue;
       }
       await fireRecord(state, record, now);
+      continue;
+    }
+
+    // 通知後にユーザーが何も操作しなかったnotifiedレコードは、無期限に
+    // 残り続けないよう一定時間後に削除する（実Chromeスモークテスト監査で
+    // 発見）。
+    if (isStaleNotified(record, now)) {
+      delete state.timersById[record.id];
       continue;
     }
 
