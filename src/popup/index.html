@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <title>会議終了タブ・タイマー</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <h1>会議終了タブ・タイマー</h1>
+
+    <p id="error" class="error" role="alert" hidden></p>
+    <p id="cancelled-banner" class="banner" hidden></p>
+
+    <section id="current-tab-section">
+      <p id="current-tab-title"></p>
+
+      <div id="no-timer-form">
+        <div class="presets">
+          <button data-minutes="15" class="preset-button">15分</button>
+          <button data-minutes="30" class="preset-button">30分</button>
+          <button data-minutes="60" class="preset-button">1時間</button>
+          <button data-minutes="120" class="preset-button">2時間</button>
+        </div>
+        <label>
+          任意の日時
+          <input type="datetime-local" id="custom-datetime" />
+        </label>
+        <button id="set-custom-button">この日時で設定</button>
+      </div>
+
+      <div id="existing-timer" hidden>
+        <p id="existing-timer-info"></p>
+        <label>
+          変更後の日時
+          <input type="datetime-local" id="change-datetime" />
+        </label>
+        <button id="change-button">変更</button>
+        <button id="cancel-button">キャンセル</button>
+      </div>
+    </section>
+
+    <h2>全タブのタイマー一覧</h2>
+    <ul id="timer-list"></ul>
+    <p id="timer-list-empty" hidden>設定中のタイマーはありません。</p>
+
+    <script type="module" src="popup.ts"></script>
+  </body>
+</html>
